@@ -59,6 +59,7 @@ func main() {
 	}
 
 	for _, l := range lines {
+
 		var p1,p2 point
 		if l.p1.x == l.p2.x || l.p1.y == l.p2.y {
 			if l.p1.x <= l.p2.x && l.p1.y <= l.p2.y {
@@ -74,6 +75,7 @@ func main() {
 				}
 			}
 		} else {
+
 			if l.p1.x < l.p2.x {
 				p1 = l.p1
 				p2 = l.p2
@@ -81,17 +83,16 @@ func main() {
 				p1 = l.p2
 				p2 = l.p1
 			}
-			j := p1.x
-			if p2.y < p1.y {
-				for i := p1.y; i >= p2.y; i-- {
-					grid[i][j]++
-					j++
-				}
-			} else {
-				for i := p1.y; i <= p2.y; i++ {
-					grid[i][j]++
-					j++
-				}
+
+			dx := p2.x - p1.x
+			dy := p2.y - p1.y
+
+			m := int(float32(dy)/float32(dx))
+			b := p1.y - m * p1.x
+
+			for j := p1.x; j <= p2.x; j++ {
+				i := m * j + b
+				grid[i][j]++
 			}
 
 		}
