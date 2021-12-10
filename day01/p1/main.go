@@ -20,11 +20,11 @@ func main() {
 }
 
 func getDepths() []int {
-	lines, _  := file.GetLines("./data.txt")
-	depths := make([]int,0,len(lines))
+	lines, _ := file.GetLines("./data.txt")
+	depths := make([]int, 0, len(lines))
 	for _, line := range lines {
 		depth, _ := strconv.Atoi(line)
-		depths = append(depths,depth)
+		depths = append(depths, depth)
 	}
 	return depths
 }

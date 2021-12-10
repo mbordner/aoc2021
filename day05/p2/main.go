@@ -50,9 +50,9 @@ func main() {
 		}
 	}
 
-	grid := make([][]int,maxY+1,maxY+1)
+	grid := make([][]int, maxY+1, maxY+1)
 	for i := 0; i < maxY+1; i++ {
-		grid[i] = make([]int,maxX+1,maxX+1)
+		grid[i] = make([]int, maxX+1, maxX+1)
 		for j := 0; j < maxX+1; j++ {
 			grid[i][j] = 0
 		}
@@ -60,7 +60,7 @@ func main() {
 
 	for _, l := range lines {
 
-		var p1,p2 point
+		var p1, p2 point
 		if l.p1.x == l.p2.x || l.p1.y == l.p2.y {
 			if l.p1.x <= l.p2.x && l.p1.y <= l.p2.y {
 				p1 = l.p1
@@ -87,11 +87,11 @@ func main() {
 			dx := p2.x - p1.x
 			dy := p2.y - p1.y
 
-			m := int(float32(dy)/float32(dx))
-			b := p1.y - m * p1.x
+			m := int(float32(dy) / float32(dx))
+			b := p1.y - m*p1.x
 
 			for j := p1.x; j <= p2.x; j++ {
-				i := m * j + b
+				i := m*j + b
 				grid[i][j]++
 			}
 

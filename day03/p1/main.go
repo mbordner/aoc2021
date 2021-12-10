@@ -19,8 +19,8 @@ func main() {
 			}
 		}
 	}
-	gamma := make([]byte,len(data[0]),len(data[0]))
-	epsilon := make([]byte,len(data[0]),len(data[0]))
+	gamma := make([]byte, len(data[0]), len(data[0]))
+	epsilon := make([]byte, len(data[0]), len(data[0]))
 
 	for i := range ones {
 		if ones[i] > zeros[i] {
@@ -30,10 +30,10 @@ func main() {
 		}
 	}
 
-	g, _ := strconv.ParseInt(string(gamma),2,64)
-	e, _ := strconv.ParseInt(string(epsilon),2,64)
+	g, _ := strconv.ParseInt(string(gamma), 2, 64)
+	e, _ := strconv.ParseInt(string(epsilon), 2, 64)
 
-	fmt.Println(g*e)
+	fmt.Println(g * e)
 }
 
 func getData() []string {

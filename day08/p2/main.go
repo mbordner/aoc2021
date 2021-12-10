@@ -180,7 +180,7 @@ func NewEntry(line string) *entry {
 		for _, b := range digit {
 			val |= vals[entr.mapped[string(b)]]
 		}
-		switch(val) {
+		switch val {
 		case valZero:
 			valStr += "0"
 		case valOne:
@@ -204,7 +204,7 @@ func NewEntry(line string) *entry {
 		}
 	}
 
-	tmpVal, _ := strconv.ParseInt(valStr,10,32)
+	tmpVal, _ := strconv.ParseInt(valStr, 10, 32)
 	entr.value = int(tmpVal)
 
 	return entr

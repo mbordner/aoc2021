@@ -27,7 +27,7 @@ func (e *entry) uniqueCount() int {
 
 func NewEntry(line string) *entry {
 	e := new(entry)
-	matches := reEntry.FindAllStringSubmatch(line,-1)
+	matches := reEntry.FindAllStringSubmatch(line, -1)
 	e.patterns = matches[0][1:11]
 	e.digits = matches[0][11:]
 	return e
@@ -73,4 +73,4 @@ b    .  b    .  .    c  b    c  b    c
  gggg    gggg    ....    gggg    gggg
 
 
- */
+*/

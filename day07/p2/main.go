@@ -41,22 +41,21 @@ func expand(cost int) int {
 
 func getCost(crabs []int, pos int) (cost int) {
 	for _, n := range crabs {
-		cost +=  expand(int(math.Abs( float64(n) - float64(pos))))
+		cost += expand(int(math.Abs(float64(n) - float64(pos))))
 	}
 	return
 }
 
-
 func main() {
 	crabs := getData()
 	min, max, avg := getStats(crabs)
-	fmt.Println(min,max,avg)
+	fmt.Println(min, max, avg)
 
-	cost := getCost(crabs,min)
+	cost := getCost(crabs, min)
 	pos := min
 
-	for i := min+1; i <= max; i++ {
-		c := getCost(crabs,i)
+	for i := min + 1; i <= max; i++ {
+		c := getCost(crabs, i)
 		if c < cost {
 			cost = c
 			pos = i
@@ -64,7 +63,7 @@ func main() {
 		//fmt.Println(">>",i,c)
 	}
 
-	fmt.Println(pos,cost)
+	fmt.Println(pos, cost)
 }
 
 func getData() []int {

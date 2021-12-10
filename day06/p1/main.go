@@ -28,7 +28,7 @@ func main() {
 			fish[i] = fish[i+1]
 		}
 		fish[8] = spawning
-		fish[6]+=spawning
+		fish[6] += spawning
 		days++
 		sum := getSum(fish)
 		fmt.Println(days, sum)

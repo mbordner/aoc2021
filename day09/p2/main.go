@@ -78,15 +78,15 @@ func main() {
 	}
 	fmt.Println(riskSum)
 
-	basins := make([]basin,0,len(lowPoints))
+	basins := make([]basin, 0, len(lowPoints))
 
 	for _, lp := range lowPoints {
 		b := getBasin(points, lp)
-		basins = append(basins,b)
+		basins = append(basins, b)
 		//fmt.Println(lp, len(b), b)
 	}
 
-	sort.Slice(basins,func(i, j int)bool {
+	sort.Slice(basins, func(i, j int) bool {
 		return len(basins[i]) > len(basins[j])
 	})
 

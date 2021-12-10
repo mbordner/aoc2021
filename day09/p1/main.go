@@ -22,7 +22,7 @@ func main() {
 			if j < len(points[i])-1 { // right
 				adj = append(adj, points[i][j+1])
 			}
-			if i < len(points) - 1 { // below
+			if i < len(points)-1 { // below
 				adj = append(adj, points[i+1][j])
 			}
 			lowPoint := true

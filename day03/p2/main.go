@@ -26,8 +26,8 @@ func main() {
 
 	ones, zeros := getCounts(data)
 
-	gamma := make([]byte,len(data[0]),len(data[0]))
-	epsilon := make([]byte,len(data[0]),len(data[0]))
+	gamma := make([]byte, len(data[0]), len(data[0]))
+	epsilon := make([]byte, len(data[0]), len(data[0]))
 
 	for i := range data[0] {
 		if ones[i] > zeros[i] {
@@ -37,14 +37,14 @@ func main() {
 		}
 	}
 
-	g, _ := strconv.ParseInt(string(gamma),2,64)
-	e, _ := strconv.ParseInt(string(epsilon),2,64)
+	g, _ := strconv.ParseInt(string(gamma), 2, 64)
+	e, _ := strconv.ParseInt(string(epsilon), 2, 64)
 
-	fmt.Println(g*e)
+	fmt.Println(g * e)
 
-	nums := make([]string,0,len(data))
+	nums := make([]string, 0, len(data))
 	for i := range data {
-		nums = append(nums,data[i])
+		nums = append(nums, data[i])
 	}
 
 	for i := range data[0] {
@@ -53,10 +53,10 @@ func main() {
 		if zeros[i] > ones[i] {
 			bit = '0'
 		}
-		tmp := make([]string,0,len(nums))
+		tmp := make([]string, 0, len(nums))
 		for j := range nums {
 			if byte(nums[j][i]) == byte(bit) {
-				tmp = append(tmp,nums[j])
+				tmp = append(tmp, nums[j])
 			}
 		}
 		nums = tmp
@@ -65,11 +65,11 @@ func main() {
 		}
 	}
 
-	ogr, _ := strconv.ParseInt(nums[0],2,64)
+	ogr, _ := strconv.ParseInt(nums[0], 2, 64)
 
-	nums = make([]string,0,len(data))
+	nums = make([]string, 0, len(data))
 	for i := range data {
-		nums = append(nums,data[i])
+		nums = append(nums, data[i])
 	}
 
 	for i := range data[0] {
@@ -78,10 +78,10 @@ func main() {
 		if ones[i] < zeros[i] {
 			bit = '1'
 		}
-		tmp := make([]string,0,len(nums))
+		tmp := make([]string, 0, len(nums))
 		for j := range nums {
 			if byte(nums[j][i]) == byte(bit) {
-				tmp = append(tmp,nums[j])
+				tmp = append(tmp, nums[j])
 			}
 		}
 		nums = tmp
@@ -90,7 +90,7 @@ func main() {
 		}
 	}
 
-	co2sr, _ := strconv.ParseInt(nums[0],2,64)
+	co2sr, _ := strconv.ParseInt(nums[0], 2, 64)
 
 	fmt.Println(ogr * co2sr)
 

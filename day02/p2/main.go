@@ -17,9 +17,9 @@ type instruction struct {
 }
 
 type pos struct {
-	x int
-	y int
-	z int
+	x   int
+	y   int
+	z   int
 	aim int
 }
 
@@ -42,13 +42,13 @@ func main() {
 }
 
 func getInstructions(filename string) []instruction {
-	instructions := make([]instruction,0,100)
+	instructions := make([]instruction, 0, 100)
 	lines, _ := file.GetLines(filename)
 	for _, line := range lines {
 		matches := reInstruction.FindStringSubmatch(line)
 		dir := matches[1]
 		amt, _ := strconv.Atoi(matches[2])
-		instructions = append(instructions,instruction{
+		instructions = append(instructions, instruction{
 			dir: dir,
 			amt: amt,
 		})
