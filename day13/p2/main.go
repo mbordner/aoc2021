@@ -60,7 +60,7 @@ func (s *sheet) getGrid() [][]string {
 			if s.hasPoint(pos{y: i, x: j}) {
 				grid[i][j] = "#"
 			} else {
-				grid[i][j] = "."
+				grid[i][j] = " "
 			}
 		}
 	}
