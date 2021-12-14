@@ -1,0 +1,68 @@
+NNCB
+NCNBCHB
+NBCCNBBBCBHCB
+NBBBCNCCNBBNBNBBCHBHHBCHB
+
+BB -> N
+BC -> B
+BH -> H
+BN -> B
+
+CB -> H
+CC -> N
+CH -> B
+CN -> C
+
+HB -> C
+HC -> B
+HH -> N
+HN -> C
+
+NB -> B
+NC -> B
+NH -> C
+NN -> C
+
+
+1) incr pairs ..  save last
+
+
+
+
+NNCB -> (NN) (NC) (CB)
+   <- NC NB CH B
+
+NCNBCHB -> (NC) (CN) (NB) (BC) (CH) (HB)
+    <- NB CC NB BB CB HC B
+
+NBCCNBBBCBHCB -> (NB) (BC) (CC) (CN) (NB) (BB) (BB) (BC) (CB) (BH) (HC) (CB)
+
+NBBBCNCCNBBNBNBBCHBHHBCHB ->
+
+
+N N C B
+ C B H
+
+N C N B C H B
+ B C B B B C
+
+N B C C N B B B C B H C B
+ B B N C B N N B H H B H
+
+
+NNCB
+CBH
+
+
+N N C B
+ C B H
+
+BCBBBC
+
+
+
+(NN) (NC) (CB)  => N N C - B
+
+(NC) (CN) (NB) (BC) (CH) (HB)  => N C N B C H - B
+
+(NB) (BC) (CC) (CN) (NB) (BB) (BB) (BC) (CB) (BH) (HC) (CB) => N B C C N B B B C B H C - B
