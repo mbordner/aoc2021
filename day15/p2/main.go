@@ -18,15 +18,18 @@ type cave struct {
 
 func main() {
 	c := getCave("../data.txt")
+	fmt.Println("graph constructed")
 
 	shortestPaths := djikstra.GenerateShortestPaths(c.g, c.start)
+	fmt.Println("shortest paths calculated from start")
+
 	_, cost := shortestPaths.GetShortestPath(c.goal)
 
 	fmt.Println(cost)
 
 }
 
-func getValue(oval int, inc int) int {
+func getIncrementingTileValue(oval int, inc int) int {
 	val := ((oval-1)+inc)%9 + 1
 	return val
 }
@@ -38,35 +41,35 @@ func getCave(filename string) *cave {
 
 	lines, _ := file.GetLines(filename)
 
-	ovalues := make([][]int, len(lines), len(lines))
+	origValues := make([][]int, len(lines), len(lines))
 	for y, line := range lines {
-		ovalues[y] = make([]int, len(line), len(line))
+		origValues[y] = make([]int, len(line), len(line))
 		for x, char := range line {
 			v, _ := strconv.ParseInt(string(char), 10, 32)
-			ovalues[y][x] = int(v)
+			origValues[y][x] = int(v)
 
 		}
 	}
 
-	oysize := len(ovalues)
-	oxsize := len(ovalues[0])
+	numTiles := 5
 
-	ysize := len(lines) * 5
-	xsize := len(lines[0]) * 5
+	origYDimension := len(origValues)
+	origXDimension := len(origValues[0])
 
-	values := make([][]int, ysize, ysize)
+	yDimension := len(lines) * numTiles
+	xDimension := len(lines[0]) * numTiles
+
+	values := make([][]int, yDimension, yDimension)
 	for y := range values {
-		values[y] = make([]int, xsize, xsize)
+		values[y] = make([]int, xDimension, xDimension)
 	}
 
-	tiles := 5
+	for i := 0; i < numTiles; i++ {
+		for j := 0; j < numTiles; j++ {
 
-	for i := 0; i < tiles; i++ {
-		for j := 0; j < tiles; j++ {
-
-			for y := 0; y < oysize; y++ {
-				for x := 0; x < oxsize; x++ {
-					values[y+(i*oysize)][x+(j*oxsize)] = getValue(ovalues[y][x], i+j)
+			for y := 0; y < origYDimension; y++ {
+				for x := 0; x < origXDimension; x++ {
+					values[y+(i*origYDimension)][x+(j*origXDimension)] = getIncrementingTileValue(origValues[y][x], i+j)
 				}
 			}
 
@@ -90,7 +93,7 @@ func getCave(filename string) *cave {
 
 			if x == 0 && y == 0 {
 				c.start = n
-			} else if x == xsize-1 && y == ysize-1 {
+			} else if x == xDimension-1 && y == yDimension-1 {
 				c.goal = n
 			}
 
@@ -102,7 +105,7 @@ func getCave(filename string) *cave {
 				e.AddProperty("dir", geom.North)
 			}
 
-			if y < ysize-1 {
+			if y < yDimension-1 {
 				below := c.g.GetNode(geom.Pos{Y: y + 1, X: x})
 				e = n.AddEdge(below, float64(below.GetProperty("value").(int)))
 				e.AddProperty("dir", geom.South)
@@ -114,7 +117,7 @@ func getCave(filename string) *cave {
 				e.AddProperty("dir", geom.West)
 			}
 
-			if x < xsize-1 {
+			if x < xDimension-1 {
 				right := c.g.GetNode(geom.Pos{Y: y, X: x + 1})
 				e = n.AddEdge(right, float64(right.GetProperty("value").(int)))
 				e.AddProperty("dir", geom.East)
