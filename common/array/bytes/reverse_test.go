@@ -1,7 +1,7 @@
 package bytes_test
 
 import (
-	"github.com/mbordner/aoc2020/common/array/bytes"
+	"aoc2021/common/array/bytes"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
