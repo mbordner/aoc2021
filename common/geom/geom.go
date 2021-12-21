@@ -170,10 +170,16 @@ func (bb *BoundingBox) DistanceFromEdge(p Pos) int {
 	return d
 }
 
+type Positions []Pos
+
 type Pos struct {
 	X int
 	Y int
 	Z int
+}
+
+func (p Pos) Transform(x, y, z int) Pos {
+	return Pos{X: p.X + x, Y: p.Y + y, Z: p.Z + z}
 }
 
 func (p Pos) Clone() Pos {
@@ -184,12 +190,21 @@ func (p Pos) String() string {
 	return fmt.Sprintf("{x:%d, y:%d, z:%d}", p.X, p.Y, p.Z)
 }
 
-func (bb *BoundingBox) GetPositions() []Pos {
-	poss := make([]Pos, 0, ((bb.xMax-bb.xMin)+1)*((bb.yMax-bb.yMin)+1))
+func (bb *BoundingBox) GetPositions() Positions {
+	poss := make(Positions, 0, ((bb.xMax-bb.xMin)+1)*((bb.yMax-bb.yMin)+1))
 	for y := bb.yMin; y <= bb.yMax; y++ {
 		for x := bb.xMin; x <= bb.xMax; x++ {
 			poss = append(poss, Pos{Y: y, X: x})
 		}
 	}
 	return poss
+}
+
+func (ps *Positions) Transform(x, y, z int) Positions {
+	for i := 0; i < len(*ps); i++ {
+		(*ps)[i].X += x
+		(*ps)[i].Y += y
+		(*ps)[i].Z += z
+	}
+	return *ps
 }
