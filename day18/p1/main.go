@@ -275,6 +275,5 @@ func main() {
 
 	max := getLargestMagnitudeAddingOnlyTwo(lines)
 
-	// 4258 too low
 	fmt.Println(max)
 }

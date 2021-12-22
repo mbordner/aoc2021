@@ -186,7 +186,7 @@ func main() {
 		img.print()
 		fmt.Println("\n---\n")
 	}
-	
+
 	fmt.Println("last image on pixel count: ", images[len(images)-1].getOnPixelCount())
 
 }
