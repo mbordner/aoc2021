@@ -133,7 +133,7 @@ func main() {
 
 		turns = append(turns, wins)
 
-		fmt.Println("universes after turn ", len(turns), " are ", nextStateCounts.counts(), " with ", len(nextStateCounts), " distinct states")
+		fmt.Println("universe count (still playing) after ", len(turns), " turns is ", nextStateCounts.counts(), " with ", len(nextStateCounts), " distinct states")
 
 		states = nextStateCounts
 

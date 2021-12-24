@@ -42,82 +42,104 @@ func (d Direction) Opposite() Direction {
 }
 
 type BoundingBox struct {
-	xMin int
-	xMax int
-	yMin int
-	yMax int
-	zMin int
-	zMax int
+	MinX int
+	MaxX int
+	MinY int
+	MaxY int
+	MinZ int
+	MaxZ int
 }
 
 func (bb *BoundingBox) SetExtents(x1, y1, z1, x2, y2, z2 int) {
-	bb.xMin = x1
-	bb.yMin = y1
-	bb.zMin = z1
-	bb.xMax = x2
-	bb.yMax = y2
-	bb.zMax = z2
+	bb.MinX = x1
+	bb.MinY = y1
+	bb.MinZ = z1
+	bb.MaxX = x2
+	bb.MaxY = y2
+	bb.MaxZ = z2
 }
 
 func (bb BoundingBox) XMin() int {
-	return bb.xMin
+	return bb.MinX
 }
 
 func (bb BoundingBox) XMax() int {
-	return bb.xMax
+	return bb.MaxX
 }
 
 func (bb BoundingBox) YMin() int {
-	return bb.yMin
+	return bb.MinY
 }
 
 func (bb BoundingBox) YMax() int {
-	return bb.yMax
+	return bb.MaxY
 }
 
 func (bb BoundingBox) ZMin() int {
-	return bb.zMin
+	return bb.MinZ
 }
 
 func (bb BoundingBox) ZMax() int {
-	return bb.zMax
+	return bb.MaxZ
 }
 
 func (bb BoundingBox) String() string {
-	p1 := Pos{X: bb.xMin, Y: bb.yMin}
-	p2 := Pos{X: bb.xMax, Y: bb.yMax}
+	p1 := Pos{X: bb.MinX, Y: bb.MinY}
+	p2 := Pos{X: bb.MaxX, Y: bb.MaxY}
 	return fmt.Sprintf("[%s, %s]", p1, p2)
 }
 
 func (bb *BoundingBox) Extend(p Pos) {
-	if p.X < bb.xMin {
-		bb.xMin = p.X
+	if p.X < bb.MinX {
+		bb.MinX = p.X
 	}
-	if p.X > bb.xMax {
-		bb.xMax = p.X
+	if p.X > bb.MaxX {
+		bb.MaxX = p.X
 	}
-	if p.Y > bb.yMax {
-		bb.yMax = p.Y
+	if p.Y > bb.MaxY {
+		bb.MaxY = p.Y
 	}
-	if p.Y < bb.yMin {
-		bb.yMin = p.Y
+	if p.Y < bb.MinY {
+		bb.MinY = p.Y
 	}
-	if p.Z < bb.zMin {
-		bb.zMin = p.Z
+	if p.Z < bb.MinZ {
+		bb.MinZ = p.Z
 	}
-	if p.Z > bb.zMax {
-		bb.zMax = p.Z
+	if p.Z > bb.MaxZ {
+		bb.MaxZ = p.Z
 	}
 }
 
 func (bb *BoundingBox) Contains(p Pos) bool {
-	if p.X < bb.xMin || p.X > bb.xMax {
+	if p.X < bb.MinX || p.X > bb.MaxX {
 		return false
 	}
-	if p.Y < bb.yMin || p.Y > bb.yMax {
+	if p.Y < bb.MinY || p.Y > bb.MaxY {
 		return false
 	}
-	if p.Z < bb.zMin || p.Z > bb.zMax {
+	if p.Z < bb.MinZ || p.Z > bb.MaxZ {
+		return false
+	}
+	return true
+}
+
+func (bb *BoundingBox) Surrounds(obb *BoundingBox) bool {
+	if obb.MinX < bb.MinX {
+		return false
+	}
+	if obb.MaxX > bb.MaxX {
+		return false
+	}
+	if obb.MinY < bb.MinY {
+		return false
+	}
+	if obb.MaxY > bb.MaxY {
+		return false
+	}
+	if obb.MinZ < bb.MinZ {
+		return false
+	}
+	if obb.MaxZ > bb.MaxZ {
 		return false
 	}
 	return true
@@ -125,16 +147,16 @@ func (bb *BoundingBox) Contains(p Pos) bool {
 
 func (bb *BoundingBox) GetDirection(p Pos) Direction {
 	dir := 0
-	if p.X < bb.xMin {
+	if p.X < bb.MinX {
 		dir |= int(West)
 	}
-	if p.X > bb.xMax {
+	if p.X > bb.MaxX {
 		dir |= int(East)
 	}
-	if p.Y > bb.yMax {
+	if p.Y > bb.MaxY {
 		dir |= int(North)
 	}
-	if p.Y < bb.yMin {
+	if p.Y < bb.MinY {
 		dir |= int(South)
 	}
 	return Direction(dir)
@@ -147,22 +169,22 @@ func (bb *BoundingBox) Intersects(p1, p2 Pos) bool {
 func (bb *BoundingBox) DistanceFromEdge(p Pos) int {
 	d := math.MaxInt64
 
-	t := bb.xMax - p.X
+	t := bb.MaxX - p.X
 	if t < d {
 		d = t
 	}
 
-	t = p.X - bb.xMin
+	t = p.X - bb.MinX
 	if t < d {
 		d = t
 	}
 
-	t = p.Y - bb.yMin
+	t = p.Y - bb.MinY
 	if t < d {
 		d = t
 	}
 
-	t = bb.yMax - p.Y
+	t = bb.MaxY - p.Y
 	if t < d {
 		d = t
 	}
@@ -190,11 +212,27 @@ func (p Pos) String() string {
 	return fmt.Sprintf("{x:%d, y:%d, z:%d}", p.X, p.Y, p.Z)
 }
 
+func Abs(n int) int {
+	if n > 0 {
+		return n
+	}
+	return -n
+}
+
+func (bb *BoundingBox) GetPositionsSize() uint64 {
+	xs := Abs(bb.MaxX-bb.MinX) + 1
+	ys := Abs(bb.MaxY-bb.MinY) + 1
+	zs := Abs(bb.MaxZ-bb.MinZ) + 1
+	return uint64(xs) * uint64(ys) * uint64(zs)
+}
+
 func (bb *BoundingBox) GetPositions() Positions {
-	poss := make(Positions, 0, ((bb.xMax-bb.xMin)+1)*((bb.yMax-bb.yMin)+1))
-	for y := bb.yMin; y <= bb.yMax; y++ {
-		for x := bb.xMin; x <= bb.xMax; x++ {
-			poss = append(poss, Pos{Y: y, X: x})
+	poss := make(Positions, 0, ((bb.MaxX-bb.MinX)+1)*((bb.MaxY-bb.MinY)+1*((bb.MaxZ-bb.MinZ)+1)))
+	for z := bb.MinZ; z <= bb.MaxZ; z++ {
+		for y := bb.MinY; y <= bb.MaxY; y++ {
+			for x := bb.MinX; x <= bb.MaxX; x++ {
+				poss = append(poss, Pos{Z: z, Y: y, X: x})
+			}
 		}
 	}
 	return poss
