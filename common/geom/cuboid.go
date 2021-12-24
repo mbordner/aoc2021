@@ -21,7 +21,7 @@ const (
 
 type Corner int
 
-const ( //  Left, Right,  Front, Back, Ground Top
+const ( //  Left, Right,  Front, Back, Ground, Top
 	LFG Corner = iota // Left (x min), Front (y min),  Ground (z min)
 	RFG               // Right (x max), Front (y min), Ground (z min)
 	LBG               // Left (x min), Back (y max), Ground (z min)
@@ -370,8 +370,6 @@ func (c Cuboid) Intersect(o Cuboid) (cCuboids Cuboids, intersecting Cuboids, oCu
 
 		candidates := make(Cuboids, 0, 8)
 
-		// TODO: displace by 1
-
 		// left side
 		candidates = append(candidates, Cuboid{Min: c.Min, Max: corners[LBT].Snap(c.Max, Y).Snap(c.Max, Z).Transform(Vector{X: -1})})
 		// right side
@@ -381,7 +379,7 @@ func (c Cuboid) Intersect(o Cuboid) (cCuboids Cuboids, intersecting Cuboids, oCu
 		candidates = append(candidates, Cuboid{Min: corners[LFG].Snap(c.Min, Z), Max: corners[RBG].Transform(Vector{Z: -1})})
 
 		// top side
-		candidates = append(candidates, Cuboid{Min: corners[LFT].Transform(Vector{Z:1}), Max:corners[RBT].Snap(c.Max,Z)})
+		candidates = append(candidates, Cuboid{Min: corners[LFT].Transform(Vector{Z: 1}), Max: corners[RBT].Snap(c.Max, Z)})
 
 		// front side
 		candidates = append(candidates, Cuboid{Min: corners[LFG].Snap(c.Min, Y).Snap(c.Min, Z), Max: corners[RFT].Snap(c.Max, Z).Transform(Vector{Y: -1})})
@@ -393,6 +391,13 @@ func (c Cuboid) Intersect(o Cuboid) (cCuboids Cuboids, intersecting Cuboids, oCu
 		if o != *icptr {
 			oCuboids, _, _ = o.Intersect(*icptr)
 		}
+
+	} else {
+
+		cCuboids = Cuboids{c}
+		intersecting = Cuboids{}
+		oCuboids = Cuboids{o}
+
 	}
 
 	return
