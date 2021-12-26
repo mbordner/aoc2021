@@ -314,6 +314,261 @@ func Test_SplitAt(t *testing.T) {
 	}
 }
 
+func Test_Points(t *testing.T) {
+
+	cases := []struct {
+		c  string
+		ps string
+	}{
+		{
+			c:  `0,0,0,1,1,1`,
+			ps: `0,0,0,0,0,1,0,1,0,0,1,1,1,0,0,1,0,1,1,1,0,1,1,1`,
+		},
+		{
+			c:  `0,0,0,0,0,0`,
+			ps: `0,0,0`,
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
+			c := NewCuboid(tc.c)
+			ps := c.Points()
+			assert.Equal(t, tc.ps, fmt.Sprintf("%s", ps))
+		})
+	}
+}
+
+func Test_Snap(t *testing.T) {
+
+	cases := []struct {
+		cuboid string
+	}{
+		{`0,0,0,1,1,1`},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
+
+			c := NewCuboid(tc.cuboid)
+			assert.True(t, c.IsOnEdge(c.Min))
+			assert.True(t, c.IsOnEdge(c.Max))
+
+			assert.True(t, c.Min.Snap(c.Max, X).Snap(c.Max, Y).Snap(c.Max, Z) == c.Max)
+			assert.True(t, c.Max.Snap(c.Min, X).Snap(c.Min, Y).Snap(c.Min, Z) == c.Min)
+		})
+	}
+}
+
+func Test_Encloses(t *testing.T) {
+
+	cases := []struct {
+		c string
+		o string
+	}{
+		{
+			c: `0,0,0,2,2,1`,
+			o: `0,0,0,1,1,1`,
+		},
+		{
+			c: `0,0,0,1,1,1`,
+			o: `0,0,0,2,2,1`,
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
+			c := NewCuboid(tc.c)
+			o := NewCuboid(tc.o)
+			assert.True(t, (c.Encloses(o) || o.Encloses(c)) && c.Overlaps(o))
+		})
+	}
+}
+
+func Test_SplitCombineBack(t *testing.T) {
+	cases := []struct {
+		cuboid string
+		point  string
+	}{
+		{
+			cuboid: `0,0,0,3,3,3`,
+			point:  `1,1,1`,
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
+			c := NewCuboid(tc.cuboid)
+			p := NewPoint(tc.point)
+			combined := c.SplitAt(p).Combine()
+			assert.Equal(t, 1, len(combined))
+			assert.Equal(t, c, combined[0])
+		})
+	}
+}
+
+func Test_CombineToOne(t *testing.T) {
+
+	cases := []struct {
+		cuboids []string
+	}{
+		{
+			cuboids: []string{
+				`0,0,0,1,1,1`,
+				`2,0,0,3,1,1`,
+				`4,0,0,5,1,1`,
+
+				`0,2,0,1,3,1`,
+				`2,2,0,3,3,1`,
+				`4,2,0,5,3,1`,
+
+				`0,4,0,1,5,1`,
+				`2,4,0,3,5,1`,
+				`4,4,0,5,5,1`,
+
+				`0,0,2,1,1,3`,
+				`2,0,2,3,1,3`,
+				`4,0,2,5,1,3`,
+
+				`0,2,2,1,3,3`,
+				`2,2,2,3,3,3`,
+				`4,2,2,5,3,3`,
+
+				`0,4,2,1,5,3`,
+				`2,4,2,3,5,3`,
+				`4,4,2,5,5,3`,
+
+				`0,0,4,1,1,5`,
+				`2,0,4,3,1,5`,
+				`4,0,4,5,1,5`,
+
+				`0,2,4,1,3,5`,
+				`2,2,4,3,3,5`,
+				`4,2,4,5,3,5`,
+
+				`0,4,4,1,5,5`,
+				`2,4,4,3,5,5`,
+				`4,4,4,5,5,5`,
+			},
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
+
+			cuboids := make(Cuboids, 0, 8)
+			for _, c := range tc.cuboids {
+				cuboids = append(cuboids, NewCuboid(c))
+			}
+
+			cuboids = cuboids.Combine()
+
+			assert.Equal(t, 1, len(cuboids))
+
+		})
+	}
+
+}
+
+func TestCuboid_IntersectCuboidsPoints(t *testing.T) {
+
+	cases := []struct {
+		cuboids []string
+		points  string
+	}{
+		{
+			cuboids: []string{`0,0,0,1,1,1`, `2,2,2,2,2,2`, `3,3,3,3,3,3`},
+			points: Points{
+				NewPoint(`0,0,0`),
+				NewPoint(`0,1,0`),
+				NewPoint(`1,0,0`),
+				NewPoint(`1,1,0`),
+
+				NewPoint(`0,0,1`),
+				NewPoint(`0,1,1`),
+				NewPoint(`1,0,1`),
+				NewPoint(`1,1,1`),
+
+				NewPoint(`2,2,2`),
+
+				NewPoint(`3,3,3`),
+			}.DeDup().Sort().String(),
+		},
+		{
+			cuboids: []string{`0,0,0,1,2,0`, `2,1,0,3,2,0`},
+			points:  `0,0,0,0,1,0,0,2,0,1,0,0,1,1,0,1,2,0,2,1,0,2,2,0,3,1,0,3,2,0`,
+		},
+		{
+			cuboids: []string{`1,1,0,5,3,0`, `2,0,0,6,2,0`, `0,0,0,3,2,0`},
+			points:  `0,0,0,0,1,0,0,2,0,1,0,0,1,1,0,1,2,0,1,3,0,2,0,0,2,1,0,2,2,0,2,3,0,3,0,0,3,1,0,3,2,0,3,3,0,4,0,0,4,1,0,4,2,0,4,3,0,5,0,0,5,1,0,5,2,0,5,3,0,6,0,0,6,1,0,6,2,0`,
+		},
+		{
+			cuboids: []string{`3,1,1,3,3,3`, `1,1,3,2,3,3`}, //  `0,0,0,2,2,2`
+			points:  `1,1,3,1,2,3,1,3,3,2,1,3,2,2,3,2,3,3,3,1,1,3,1,2,3,1,3,3,2,1,3,2,2,3,2,3,3,3,1,3,3,2,3,3,3`,
+		},
+		{
+			cuboids: []string{`13,11,11,13,13,13`, `11,11,13,12,12,13`},
+			points:  NewPoints(`11,11,13,11,12,13,12,11,13,12,12,13,13,11,11,13,11,12,13,11,13,13,12,11,13,12,12,13,12,13,13,13,11,13,13,12,13,13,13`).DeDup().Sort().String(),
+		},
+		{
+			cuboids: []string{`10,10,10,12,12,12`, `11,11,11,13,13,13`},
+			points:  NewPoints(`10,10,10,10,10,11,10,10,12,10,11,10,10,11,11,10,11,12,10,12,10,10,12,11,10,12,12,11,10,10,11,10,11,11,10,12,11,11,10,11,11,11,11,11,12,11,11,13,11,12,10,11,12,11,11,12,12,11,12,13,11,13,11,11,13,12,11,13,13,12,10,10,12,10,11,12,10,12,12,11,10,12,11,11,12,11,12,12,11,13,12,12,10,12,12,11,12,12,12,12,12,13,12,13,11,12,13,12,12,13,13,13,11,11,13,11,12,13,11,13,13,12,11,13,12,12,13,12,13,13,13,11,13,13,12,13,13,13`).DeDup().Sort().String(),
+		},
+		{
+			cuboids: []string{`13,11,11,13,13,13`, `11,11,13,12,12,13`, `11,13,11,12,13,13`},
+			points:  NewPoints(`11,11,13,11,12,13,11,13,11,11,13,12,11,13,13,12,11,13,12,12,13,12,13,11,12,13,12,12,13,13,13,11,11,13,11,12,13,11,13,13,12,11,13,12,12,13,12,13,13,13,11,13,13,12,13,13,13`).DeDup().Sort().String(),
+		},
+		{
+			cuboids: []string{`10,10,10,12,12,12`, `13,11,11,13,13,13`, `11,11,13,12,13,13`},
+			points:  NewPoints(`10,10,10,10,10,11,10,10,12,10,11,10,10,11,11,10,11,12,10,12,10,10,12,11,10,12,12,11,10,10,11,10,11,11,10,12,11,11,10,11,11,11,11,11,12,11,11,13,11,12,10,11,12,11,11,12,12,11,12,13,11,13,13,12,10,10,12,10,11,12,10,12,12,11,10,12,11,11,12,11,12,12,11,13,12,12,10,12,12,11,12,12,12,12,12,13,12,13,13,13,11,11,13,11,12,13,11,13,13,12,11,13,12,12,13,12,13,13,13,11,13,13,12,13,13,13`).DeDup().Sort().String(),
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
+
+			var cuboids Cuboids
+			var points Points
+
+			for n := 0; n < len(tc.cuboids); n++ {
+				cuboidsPointsCount := cuboids.PointsCount()
+				newCuboid := NewCuboid(tc.cuboids[n])
+				newCuboidPointsCount := newCuboid.PointsCount()
+				cuboids = cuboids.Merge(newCuboid)
+				newCuboidsPointCount := cuboids.PointsCount()
+				assert.True(t, cuboidsPointsCount+newCuboidPointsCount >= newCuboidsPointCount)
+			}
+
+			points = cuboids.Points()
+
+			checkPoints := NewPoints(tc.points)
+
+			assert.Equal(t, len(checkPoints), len(points))
+
+			assert.Equal(t, tc.points, points.String())
+
+			noneOverlap := true
+		outer:
+			for a := 0; a < len(cuboids); a++ {
+				for b := 0; b < len(cuboids); b++ {
+					if a != b {
+						c := cuboids[a]
+						o := cuboids[b]
+						if c.Overlaps(o) {
+							noneOverlap = false
+							break outer
+						}
+					}
+				}
+			}
+
+			assert.True(t, noneOverlap)
+
+		})
+	}
+
+}
+
 func Test_IntersectCuboids(t *testing.T) {
 
 	type results struct {
@@ -340,9 +595,9 @@ func Test_IntersectCuboids(t *testing.T) {
 			c1: `0,0,0,5,5,5`,
 			c2: `-5,-5,-5,2,2,2`,
 			checks: results{
-				c1:   []string{`3,0,0,5,5,5`, `0,3,0,2,5,5`},
+				c1:   []string{`3,0,0,5,5,5`, `0,0,3,2,2,5`, `0,3,0,2,5,5`},
 				both: []string{`0,0,0,2,2,2`},
-				c2:   []string{`-5,-5,-5,-1,2,2`, `0,-5,-5,2,-1,2`},
+				c2:   []string{`-5,-5,-5,-1,2,2`, `0,0,-5,2,2,-1`, `0,-5,-5,2,-1,2`},
 			},
 		},
 		{
@@ -395,7 +650,10 @@ func Test_IntersectCuboids(t *testing.T) {
 
 			for _, check := range [][]Cuboids{{checkFromC1, fromC1}, {checkBoth, both}, {checkFromC2, fromC2}} {
 				for _, c := range check[0] {
-					assert.True(t, check[1].Contains(c))
+					if check[1].Contains(c) == false {
+						fmt.Println("wtf")
+					}
+					assert.Equal(t, true, check[1].Contains(c))
 				}
 			}
 		})

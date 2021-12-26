@@ -2,6 +2,7 @@ package geom
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -51,6 +52,84 @@ func (cs Cuboids) Contains(c Cuboid) bool {
 	return false
 }
 
+func (c Cuboid) Clone() Cuboid {
+	return Cuboid{Min: c.Min.Clone(), Max: c.Max.Clone()}
+}
+
+func (cs Cuboids) Clone() Cuboids {
+	ns := make(Cuboids, 0, len(cs))
+	for _, c := range cs {
+		ns = append(ns, c.Clone())
+	}
+	return ns
+}
+
+func (c Cuboid) Points() Points {
+	ps := make(Points, 0, c.PointsCount())
+	for x := c.Min.X; x <= c.Max.X; x++ {
+		for y := c.Min.Y; y <= c.Max.Y; y++ {
+			for z := c.Min.Z; z <= c.Max.Z; z++ {
+				ps = append(ps, Point{X: x, Y: y, Z: z})
+			}
+		}
+	}
+	return ps
+}
+
+func (cs Cuboids) Points() Points {
+	ps := make(Points, 0, cs.PointsCount())
+	for _, c := range cs {
+		ps = append(ps, c.Points()...)
+	}
+	return ps.DeDup().Sort()
+}
+
+func (ps Points) Sort() Points {
+	sort.Slice(ps, func(i, j int) bool {
+		if (ps)[i].X == ps[j].X && ps[i].Y == ps[j].Y {
+			if ps[i].Z < ps[j].Z {
+				return true
+			}
+		}
+		if ps[i].X == ps[j].X {
+			if ps[i].Y < ps[j].Y {
+				return true
+			}
+		}
+		if ps[i].X < ps[j].X {
+			return true
+		}
+		return false
+	})
+	return ps
+}
+
+func (ps Points) String() string {
+	ss := make([]string, len(ps), len(ps))
+	for i, p := range ps {
+		ss[i] = p.String()
+	}
+	return strings.Join(ss, ",")
+}
+
+func (ps Points) DeDup() Points {
+	tmap := make(map[Point]bool)
+	nps := make(Points, 0, len(ps))
+	for _, p := range ps {
+		if _, exists := tmap[p]; !exists {
+			nps = append(nps, p)
+			tmap[p] = true
+		}
+	}
+	return nps
+}
+
+func (ps Points) Print() {
+	for _, p := range ps {
+		fmt.Println(p)
+	}
+}
+
 func (cs Cuboids) Volume() uint64 {
 	v := uint64(0)
 	for _, c := range cs {
@@ -79,22 +158,204 @@ func (cs Cuboids) DeDup() Cuboids {
 	return ncs
 }
 
+func (cs Cuboids) Merge(o Cuboid) Cuboids {
+
+	if len(cs) > 0 {
+		onlyCS := make(Cuboids, 0, len(cs)+100)
+
+		for _, c := range cs {
+			tcs, _, _ := c.Intersect(o)
+			if len(tcs) > 0 {
+				onlyCS = append(onlyCS, tcs...)
+			}
+		}
+
+		ns := append(Cuboids{o}, onlyCS.Combine()...)
+
+		return ns.Combine()
+	}
+
+	return Cuboids{o}
+
+}
+
+func (cs Cuboids) Remove(o Cuboid) Cuboids {
+
+	if len(cs) > 0 {
+		onlyCS := make(Cuboids, 0, len(cs)+100)
+
+		for _, c := range cs {
+			tcs, _, _ := c.Intersect(o)
+			if len(tcs) > 0 {
+				onlyCS = append(onlyCS, tcs...)
+			}
+		}
+
+		return onlyCS.Combine()
+	}
+
+	return Cuboids{}
+
+}
+
 func (cs Cuboids) Combine() Cuboids {
-	ns := make(Cuboids, 0, len(cs))
+	if len(cs) < 2 {
+		return cs
+	}
+
+	pmap := make(map[Point]*Cuboid)
+	cmap := make(map[*Cuboid]bool)
+
 outer:
 	for i := 0; i < len(cs); i++ {
 		for j := 0; j < len(cs); j++ {
 			if i != j {
-				if cs[i].PointsCount() < cs[j].PointsCount() {
-					if cs[j].Encloses(cs[i]) {
-						continue outer
-					}
+				if cs[j].Encloses(cs[i]) {
+					continue outer
 				}
 			}
 		}
-		ns = append(ns, cs[i])
+		cmap[&cs[i]] = true
 	}
+
+	psExist := func(ps Points, corners []Corner) *Cuboid {
+		var cp *Cuboid = nil
+		for _, p := range ps {
+			if _, exists := pmap[p]; exists {
+				if cp != nil && cp != pmap[p] {
+					return nil
+				}
+				cp = pmap[p]
+			} else {
+				return nil
+			}
+		}
+		if cp != nil {
+			if _, exists := cmap[cp]; exists {
+				// we found another cuboid that matches these corners, but in the case where we are only
+				// matching 2 distinct points, we need to ensure the matching cuboid only has 4 distinct corners
+				checkCorners := cp.Corners()
+				for _, crn := range corners {
+					if ps.Contains(checkCorners[crn]) == false {
+						return nil
+					}
+				}
+
+				return cp
+			}
+		}
+		return nil
+	}
+
+	updatePmap := func() {
+		pmap = make(map[Point]*Cuboid)
+		for t := range cmap {
+			for _, p := range t.Corners() {
+				pmap[p] = t
+			}
+		}
+	}
+
+	merged := true
+	for merged {
+		merged = false
+
+		updatePmap()
+
+		ns := make([]*Cuboid, 0, len(cmap))
+		for t := range cmap {
+			ns = append(ns, t)
+		}
+		for _, c := range ns {
+
+			if _, exists := cmap[c]; !exists {
+				continue
+			}
+
+			corners := c.Corners()
+			// left
+			if cp := psExist(Points{corners[LFG], corners[LFT], corners[LBG], corners[LFT]}.Transform(Vector{X: -1}), []Corner{RFG, RFT, RBG, RFT}); cp != nil {
+				c.Min = (*cp).Min.Clone()
+				delete(cmap, cp)
+				updatePmap()
+				merged = true
+				continue
+			}
+
+			// right
+			if cp := psExist(Points{corners[RFG], corners[RFT], corners[RBG], corners[RFT]}.Transform(Vector{X: 1}), []Corner{LFG, LFT, LBG, LFT}); cp != nil {
+				c.Max = (*cp).Max.Clone()
+				delete(cmap, cp)
+				updatePmap()
+				merged = true
+				continue
+			}
+
+			// front
+			if cp := psExist(Points{corners[LFG], corners[RFG], corners[LFT], corners[RFT]}.Transform(Vector{Y: -1}), []Corner{LBG, RBG, LBT, RBT}); cp != nil {
+				c.Min = (*cp).Min.Clone()
+				delete(cmap, cp)
+				updatePmap()
+				merged = true
+				continue
+			}
+
+			// back
+			if cp := psExist(Points{corners[LBG], corners[RBG], corners[LBT], corners[RBT]}.Transform(Vector{Y: 1}), []Corner{LFG, RFG, LFT, RFT}); cp != nil {
+				c.Max = (*cp).Max.Clone()
+				delete(cmap, cp)
+				updatePmap()
+				merged = true
+				continue
+			}
+
+			// ground
+			if cp := psExist(Points{corners[LBG], corners[RBG], corners[LFG], corners[RFG]}.Transform(Vector{Z: -1}), []Corner{LBT, RBT, LFT, RFT}); cp != nil {
+				c.Min = (*cp).Min.Clone()
+				delete(cmap, cp)
+				updatePmap()
+				merged = true
+				continue
+			}
+
+			// top
+			if cp := psExist(Points{corners[LBT], corners[RBT], corners[LFT], corners[RFT]}.Transform(Vector{Z: 1}), []Corner{LBG, RBG, LFG, RFG}); cp != nil {
+				c.Max = (*cp).Max.Clone()
+				delete(cmap, cp)
+				updatePmap()
+				merged = true
+				continue
+			}
+		}
+
+	}
+
+	ns := make(Cuboids, 0, len(cmap))
+	for c := range cmap {
+		ns = append(ns, *c)
+	}
+
 	return ns
+}
+
+func (cs Cuboids) BreakOverlaps() Cuboids {
+	ns := make(Cuboids, 0, len(cs)+100)
+
+	for i := 0; i < len(cs); i++ {
+		ns = ns.Merge(cs[i])
+	}
+
+	return ns
+}
+
+func NewPoints(s string) Points {
+	pss := strings.Split(s, ",")
+	points := make(Points, 0, len(pss)/3)
+	for len(pss) > 0 {
+		points = append(points, NewPoint(strings.Join(pss[0:3], ",")))
+		pss = pss[3:]
+	}
+	return points
 }
 
 type Point struct {
@@ -134,6 +395,14 @@ func NewVector(s string) Vector {
 
 func (p Point) Transform(v Vector) Point {
 	return Point{X: p.X + v.X, Y: p.Y + v.Y, Z: p.Z + v.Z}
+}
+
+func (ps Points) Transform(v Vector) Points {
+	ns := make(Points, len(ps), len(ps))
+	for i := range ps {
+		ns[i] = ps[i].Transform(v)
+	}
+	return ns
 }
 
 func abs(val int64) uint64 {
@@ -308,6 +577,17 @@ func (c Cuboid) Encloses(o Cuboid) bool {
 	return true
 }
 
+func (cs Cuboids) Overlaps() *Cuboid {
+	if len(cs) > 0 {
+		c := cs[0]
+		for _, o := range cs[1:] {
+			c = Cuboid{Min: c.Min.Max(o.Min), Max: c.Max.Min(o.Max)}
+		}
+		return &c
+	}
+	return nil
+}
+
 func (c Cuboid) Overlaps(o Cuboid) bool {
 	np := Cuboids{c, o}.Overlaps()
 	if np != nil {
@@ -343,18 +623,10 @@ func (p Point) Snap(o Point, a Axis) Point {
 	return n
 }
 
-func (cs Cuboids) Overlaps() *Cuboid {
-	if len(cs) > 0 {
-		c := cs[0]
-		for _, o := range cs[1:] {
-			c = Cuboid{Min: c.Min.Max(o.Min), Max: c.Max.Min(o.Max)}
-		}
-		return &c
-	}
-	return nil
-}
-
 func (c Cuboid) Intersect(o Cuboid) (cCuboids Cuboids, intersecting Cuboids, oCuboids Cuboids) {
+	if c == o {
+		return []Cuboid{}, []Cuboid{c}, []Cuboid{}
+	}
 	if !c.Overlaps(o) {
 		return []Cuboid{c}, []Cuboid{}, []Cuboid{o}
 	}
@@ -391,12 +663,6 @@ func (c Cuboid) Intersect(o Cuboid) (cCuboids Cuboids, intersecting Cuboids, oCu
 		if o != *icptr {
 			oCuboids, _, _ = o.Intersect(*icptr)
 		}
-
-	} else {
-
-		cCuboids = Cuboids{c}
-		intersecting = Cuboids{}
-		oCuboids = Cuboids{o}
 
 	}
 
