@@ -2,16 +2,36 @@ package graph
 
 import "fmt"
 
+type TraversableNodeFunction func(n *Node) bool
+type TraversalbeEdgeFunction func(e *Edge) bool
+
+type VisitedNodes []*Node
+
+func (vn VisitedNodes) Contains(n *Node) bool {
+	for _, node := range vn {
+		if node == n {
+			return true
+		}
+	}
+	return false
+}
+
 type Edge struct {
-	source      *Node
-	destination *Node
-	value       float64
-	properties  map[string]interface{}
-	traversable bool
+	source          *Node
+	destination     *Node
+	value           float64
+	properties      map[string]interface{}
+	traversable     bool
+	traversableFunc *TraversalbeEdgeFunction
 }
 
 func (e *Edge) IsTraversable() bool {
-	return e.traversable && e.destination != nil && e.destination.IsTraversable()
+	traversable := e.traversable
+	if e.traversableFunc != nil {
+		f := *(e.traversableFunc)
+		traversable = f(e)
+	}
+	return traversable && e.destination != nil && e.destination.IsTraversable()
 }
 
 func (e *Edge) SetTraversable(b bool) {
@@ -46,10 +66,11 @@ func (e *Edge) GetProperty(id string) interface{} {
 }
 
 type Node struct {
-	id          interface{}
-	edges       []*Edge
-	properties  map[string]interface{}
-	traversable bool
+	id              interface{}
+	edges           []*Edge
+	properties      map[string]interface{}
+	traversable     bool
+	traversableFunc *TraversableNodeFunction
 }
 
 func (n Node) String() string {
@@ -79,7 +100,19 @@ func (n *Node) GetTraversableEdges() []*Edge {
 }
 
 func (n *Node) IsTraversable() bool {
+	if n.traversableFunc != nil {
+		f := *(n.traversableFunc)
+		return f(n)
+	}
 	return n.traversable
+}
+
+func (n *Node) SetTraversable(b bool) {
+	n.traversable = b
+}
+
+func (n *Node) SetTraversableFunction(f TraversableNodeFunction) {
+	n.traversableFunc = &f
 }
 
 func (n *Node) AddProperty(id string, value interface{}) {
@@ -91,10 +124,6 @@ func (n *Node) GetProperty(id string) interface{} {
 		return v
 	}
 	return nil
-}
-
-func (n *Node) SetTraversable(b bool) {
-	n.traversable = b
 }
 
 func (n *Node) AddEdge(o *Node, w float64) *Edge {
@@ -161,4 +190,8 @@ func (g *Graph) Merge(og *Graph) {
 	for id, n := range og.nodes {
 		g.nodes[id] = n
 	}
+}
+
+func (g *Graph) GetNodeCount() int {
+	return len(g.nodes)
 }
