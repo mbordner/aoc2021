@@ -1,0 +1,99 @@
+inp w  # get input
+
+w: input, x: ? , y: ? , z: ?
+
+mul x 0  # clear x
+
+w: input, x: 0 , y: ? , z: ?
+
+
+add x z  #
+
+w: input, x: z , y: ? , z: ?
+
+mod x 26
+
+w: input, x: z % 26 , y: ? , z: ?
+
+div z 26
+
+w: input, x: z % 26 , y: ? , z: z / 26
+
+add x -5
+
+w: input, x: z % 26 - 5 , y: ? , z: z / 26
+
+eql x w  # if x == w, set it to 1
+eql x 0  # if x == 0, set it to 1
+
+w: input, x: 1 , y: ? , z: z / 26
+
+
+mul y 0  # clear y
+add y 25 # set it to 25
+
+w: input, x: 1 , y: 25 , z: z / 26
+
+
+mul y x # no op
+add y 1
+
+w: input, x: 1 , y: 26 , z: z / 26
+
+mul z y
+
+w: input, x: 1 , y: 26 , z: z
+
+mul y 0
+
+w: input, x: 1 , y: 0 , z: z
+
+add y w
+
+add y 1
+mul y x
+
+w: input, x: w +2 , y: w+1 , z: z
+
+add z y
+
+
+
+inp w
+mul x 0
+add x z
+mod x 26
+div z 26
+add x -5
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 1
+mul y x
+add z y
+
+
+inp w
+mul x 0
+add x z
+mod x 26
+div z 1
+add x 12
+eql x w
+eql x 0
+mul y 0
+add y 25
+mul y x
+add y 1
+mul z y
+mul y 0
+add y w
+add y 1
+mul y x
+add z y

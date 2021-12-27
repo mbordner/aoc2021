@@ -17,37 +17,42 @@ func TestALU_Process(t *testing.T) {
 		{
 			program:  breakInput(input1()),
 			inputs:   []int64{3},
-			expected: `{w: 0, x: -3, y: 0, z: 0}`,
+			expected: `{"w":0,"x":-3,"y":0,"z":0}`,
 		},
 		{
 			program:  breakInput(input1()),
 			inputs:   []int64{-3},
-			expected: `{w: 0, x: 3, y: 0, z: 0}`,
+			expected: `{"w":0,"x":3,"y":0,"z":0}`,
 		},
 		{
 			program:  breakInput(input2()),
 			inputs:   []int64{3, 9},
-			expected: `{w: 0, x: 9, y: 0, z: 1}`,
+			expected: `{"w":0,"x":9,"y":0,"z":1}`,
 		},
 		{
 			program:  breakInput(input2()),
 			inputs:   []int64{2, 9},
-			expected: `{w: 0, x: 9, y: 0, z: 0}`,
+			expected: `{"w":0,"x":9,"y":0,"z":0}`,
 		},
 		{
 			program:  []string{`inp z`, `inp y`, `div z y`},
 			inputs:   []int64{9, 3},
-			expected: `{w: 0, x: 0, y: 3, z: 3}`,
+			expected: `{"w":0,"x":0,"y":3,"z":3}`,
 		},
 		{
 			program:  []string{`inp z`, `inp y`, `div z y`},
 			inputs:   []int64{9, 2},
-			expected: `{w: 0, x: 0, y: 2, z: 4}`,
+			expected: `{"w":0,"x":0,"y":2,"z":4}`,
 		},
 		{
 			program:  []string{`inp z`, `inp y`, `mod z y`},
 			inputs:   []int64{9, 2},
-			expected: `{w: 0, x: 0, y: 2, z: 1}`,
+			expected: `{"w":0,"x":0,"y":2,"z":1}`,
+		},
+		{
+			program:  breakInput(input3()),
+			inputs:   []int64{15},
+			expected: `{"w":1,"x":1,"y":1,"z":1}`,
 		},
 	}
 
