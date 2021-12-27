@@ -3,6 +3,7 @@ package geom
 import (
 	"fmt"
 	"math"
+	"strings"
 )
 
 type Direction int
@@ -206,6 +207,14 @@ func (p Pos) Transform(x, y, z int) Pos {
 
 func (p Pos) Clone() Pos {
 	return Pos{X: p.X, Y: p.Y, Z: p.Z}
+}
+
+func (ps Positions) String() string {
+	strs := make([]string, 0, len(ps))
+	for _, p := range ps {
+		strs = append(strs, p.String())
+	}
+	return strings.Join(strs, ",")
 }
 
 func (p Pos) String() string {
