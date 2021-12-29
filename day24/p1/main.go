@@ -8,6 +8,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+)
+
+var (
+	start = time.Now()
 )
 
 const (
@@ -179,6 +184,9 @@ func main() {
 			fmt.Println("final ALU state: ", output)
 		}
 	}
+
+	duration := time.Since(start)
+	fmt.Println(duration)
 
 }
 

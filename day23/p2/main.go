@@ -564,7 +564,6 @@ func main() {
 		fmt.Println(minStates, fmt.Sprintf("total cost: %d", minCost))
 	}
 
-	// 15365 too low
 	duration := time.Since(start)
 	fmt.Println(duration)
 
