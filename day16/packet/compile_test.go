@@ -30,6 +30,10 @@ func Test_CreateLiteralBitString(t *testing.T) {
 		output string
 	}{
 		{2021, `101111111000101`},
+		{1, `00001`},
+		{0, `00000`},
+		{16, `1000100000`},
+		{17, `1000100001`},
 	}
 
 	for i, test := range tests {
@@ -70,14 +74,19 @@ func Test_Compile(t *testing.T) {
 		src      string
 		compiled string
 	}{
-		{`(sum 1 3)`, ``},
+		{`42`, `324A`},
+		{`1`, `302`},
+		{`(eq 42 42)`, `3C0080C928C928`},
+		{`(sum 1 3)`, `200058C0983`},
+		{`(eq (sum 1 3) (product 2 2))`, `3C01608001630260C90016304608`},
 	}
 
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("Test Case %d", i+1), func(t *testing.T) {
-			compiled, err := Compile(test.src)
+			p, hex, err := Compile(test.src)
+			assert.NotNil(t, p)
 			assert.Nil(t, err)
-			assert.Equal(t, test.compiled, compiled)
+			assert.Equal(t, test.compiled, hex)
 		})
 
 	}

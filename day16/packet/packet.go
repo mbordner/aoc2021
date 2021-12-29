@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Operation int
@@ -61,6 +62,10 @@ type packetHeader struct {
 	payload string
 }
 
+func (ph *packetHeader) binaryString() string {
+	return ph.payload
+}
+
 func newPacketHeaderFromPayload(payload string) *packetHeader {
 	ph := new(packetHeader)
 	ph.payload = payload
@@ -115,6 +120,51 @@ func (p *Packet) prettyString(indent string) string {
 	}
 
 	return str
+}
+
+func (p *Packet) BinaryString() string {
+	pl := p.length()
+	bytes := make([]byte, pl, pl)
+
+	ph := p.header.binaryString()
+
+	copy(bytes, []byte(ph))
+
+	l := len(ph)
+
+	copy(bytes[l:], []byte(p.payload))
+
+	l += len(p.payload)
+
+	if p.subpackets != nil {
+		for _, sp := range p.subpackets {
+			spl := sp.length()
+			copy(bytes[l:], []byte(sp.BinaryString()))
+			l += spl
+		}
+	}
+
+	return string(bytes)
+}
+
+func (p *Packet) HexString() string {
+	bs := p.BinaryString()
+
+	padcount := len(bs) % 4
+
+	if padcount > 0 {
+		bs = bs + strings.Repeat("0", padcount)
+	}
+
+	hsl := len(bs) / 4
+	hexStr := make([]byte, hsl, hsl)
+
+	for i, j := 0, 0; i <= len(bs)-4; i, j = i+4, j+1 {
+		b, _ := strconv.ParseInt(string(bs[i:i+4]), 2, 8)
+		hexStr[j] = fmt.Sprintf("%X", b)[0]
+	}
+
+	return string(hexStr)
 }
 
 func (p *Packet) String() string {

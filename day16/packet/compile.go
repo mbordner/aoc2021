@@ -17,7 +17,7 @@ func createLiteralBitString(value uint64) string {
 	bitsPerGroup := 4
 	groupSize := bitsPerGroup + 1
 
-	bits := reverse(fmt.Sprintf("%b", value))
+	bits := reverse(fmt.Sprintf("%04b", value))
 	l := len(bits)
 	pl := l / bitsPerGroup * groupSize
 	if l%bitsPerGroup > 0 {
@@ -33,7 +33,7 @@ func createLiteralBitString(value uint64) string {
 	marker := byte('0')
 	for i, j := 0, 0; i < l; i, j = i+1, j+1 {
 		payload[j] = bits[i]
-		if i != 0 && i%bitsPerGroup == 0 {
+		if i != 0 && (i+1)%bitsPerGroup == 0 {
 			j++
 			payload[j] = marker
 			marker = byte('1')
@@ -41,7 +41,9 @@ func createLiteralBitString(value uint64) string {
 	}
 
 	payload = []byte(reverse(string(payload)))
-	payload[0] = '1'
+	if len(payload) > 5 {
+		payload[0] = '1'
+	}
 
 	return string(payload)
 }
@@ -53,6 +55,8 @@ func getSubpacketSourceStrings(src string) ([]string, error) {
 	end := 0
 
 	for start < len(src) {
+
+		end = start
 
 		if reDigit.MatchString(string(src[end])) {
 			for end = start; end < len(src); end++ {
@@ -186,11 +190,16 @@ func parseTree(src string) (*Packet, error) {
 	return p, nil
 }
 
-func Compile(src string) (*Packet, error) {
+func Compile(src string) (*Packet, string, error) {
 	src = reWhiteSpace.ReplaceAllString(src, " ")
 	src = strings.TrimSpace(src)
 
-	return parseTree(src)
+	p, err := parseTree(src)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return p, p.HexString(), nil
 }
 
 func reverse(s string) string {
