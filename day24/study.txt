@@ -1,99 +1,209 @@
-inp w  # get input
 
-w: input, x: ? , y: ? , z: ?
+After implementing the ALU, and messing around with go channels (building a repl, test code etc), I started
+analyzing the input program for the ALU, (our puzzle input).
 
-mul x 0  # clear x
+It requires 14 inputs when run, and the program is broken into 14 sections each starting with the `input w` line.
+Notice that each of the 14 (18 instruction) sections are pretty much the same, except for differing param values
+in 3 instructions (the num values on instructions #5, 6 and 16).  Let's look at these repeating instructions as
+a function, and the differing values as function parameters.  If we also treat the input digit as a function param (w),
+the function signature would look like this:
 
-w: input, x: 0 , y: ? , z: ?
-
-
-add x z  #
-
-w: input, x: z , y: ? , z: ?
-
-mod x 26
-
-w: input, x: z % 26 , y: ? , z: ?
-
-div z 26
-
-w: input, x: z % 26 , y: ? , z: z / 26
-
-add x -5
-
-w: input, x: z % 26 - 5 , y: ? , z: z / 26
-
-eql x w  # if x == w, set it to 1
-eql x 0  # if x == 0, set it to 1
-
-w: input, x: 1 , y: ? , z: z / 26
+func ( w, add_x, add_y, div_val )
 
 
-mul y 0  # clear y
-add y 25 # set it to 25
-
-w: input, x: 1 , y: 25 , z: z / 26
+Also, take note of the example program, and how it is using the instructions to pop bits off a
+"bit stack" (base2 digits)
 
 
-mul y x # no op
-add y 1
+inp w     # get an input value, store it in register w
 
-w: input, x: 1 , y: 26 , z: z / 26
+add z w   # copy it to reg z
+mod z 2   # mod is often used to check divisibility, but here it's being used to get the last bit of a binary number
+          # specifically, it is being used to set the z register value to the value of its last bit.
+          #
+          # for the sake of solving the puzzle which does something similar but in base26, think of this operation
+          # more like popping off a base2 digit (0 or 1) from a stack of base2 digit values
 
-mul z y
+div w 2   # pop the last bit off, or shift right (shift right is the same as div 2)
+add y w   # copy the value to reg y
+mod y 2   # set the value to the last bit... this is also the 2nd to last bit of the original input value
 
-w: input, x: 1 , y: 26 , z: z
+div w 2   # pop the last bit off, or shift right
+add x w   # copy the value to reg x
+mod x 2   # set the value to the last bit.. this is also the 3rd to last bit of the original input value
 
-mul y 0
+div w 2   # pop off the last bit, or shift right
+mod w 2   # set the value to the last bit
 
-w: input, x: 1 , y: 0 , z: z
+This is important to understand, as it's treating `w` as a bit stack of base 2 digits (0-1), and reading the last 4
+bits and storing them into the registers after the instructions execute:
 
-add y w
-
-add y 1
-mul y x
-
-w: input, x: w +2 , y: w+1 , z: z
-
-add z y
+z = 1st bit of the original value
+y = 2nd bit of the original value
+x = 3rd bit of the original value
+w = 4th bit of the original value
 
 
 
-inp w
-mul x 0
+
+Now let's analyze the first of the 14 sets of instructions that repeat (18 instructions per set).
+-------------
+inp w          # get the input (int val from 1-9), we can treat this as a function param
+-------------
+
+-------------
+mul x 0        # treating z as a stack of base 26 digits, peek into this stack top, and store the value in x
 add x z
 mod x 26
-div z 26
-add x -5
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
+-------------
+
+------------- # either pop off the stack or not, it depends on the input param div_val,
+div z [1]     # notice that it's 1 or 26 in all cases in your puzzle input
+-------------
+
+-------------
+add x [12]     # add to x the param add_x
+-------------
+
+-------------
+eql x w        # looking at these two instructions together, if x != w, set it to 1, otherwise set it to 0
+eql x 0        # or.. if x == w, set it to 1 otherwise set it to 0, and then if x == 0, set it to 1 otherwise 0
+-------------
+
+-------------
+mul y 0       # looking at these instructions together, set y to either 1 or 26 based on the value of x
+add y 25      #   if x == 0,  y will be 1
+mul y x       #   if x == 1,  y will be 26
 add y 1
-mul z y
+-------------
+
+------------- # because y will either be 1 or 26, make room on the base 26 digit stack (z) or not ,
+mul z y       #   if y == 1 (and x==0) than this operation is a noop
+------------- #   if y == 26 (and x==1) then this operation shifts left the base 26 digit stack (z)
+
+------------- # this set of operations will either add w + add_y onto the base 26 digit stack (z) or not
 mul y 0
 add y w
-add y 1
-mul y x
-add z y
+add y [1]     # y is now holding the value of w + add_y
+mul y x       # however if x == 0, it will be set back to 0
+add z y       # set the top value on the stack, or noop if y == 0
+--------------
 
 
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 12
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 1
-mul y x
-add z y
+
+this code translates to pseudocode (not optimized for readability):
+
+# w represents an input digit (the digits we provide when looking for a solution to the puzzle)
+# z is a stack of base26 digits, and can contain values from previous calls, it will be empty at the start (value: 0)
+
+func ( w, add_x, add_y, div_val )
+
+    x = z % 26             # peek onto the base26 digit stack (z) and store the top value in x
+
+    z /= div_val           # conditional right shift (base26) z
+                           # based on whether div_val == 26 or 1..  z/1 == noop
+
+    if (x + add_x) != w
+        z *= 26            # left shift z (base26)
+        y = w              # set y to w
+        z += (y + add_y)   # set w + add_y to the top of the stack
+
+
+Our goal is to find 14 legal digits (1-9) that when applied consecutively to this function
+14 times (i.e. the whole input program once), the z value will end up being 0. If the z register has a 0 value
+at the end of the program execution, the 14 input digits are legal.
+
+
+consider the inputs for add_x, div_val, and add_y for each iteration of this function (we can get these from
+the puzzle input instruction sets at instructions # 5, 6 and 16 respectively for each of the 14 sets).
+
+My puzzle input had these values:
+
+add_x   ( 12, 13, 12, -13, 11,    15, -14, 12, -8, 14,    -9, -11, -6, -5 )
+div_val (  1,  1,  1,  26,  1,     1,  26,  1, 26,  1,    26,  26, 26, 26 )
+add_y   (  1,  9, 11,   6,  6,    13,  13,  5,  7,  2,    10,  14,  7,  1 )
+
+
+Some interesting things can be seen when considering these values and the function:
+
+  * add_x is negative when div_val is 26, and positive when div_val is 1
+  * there are an equal number of sets (7 each) with div_val being 1 as there is with div_val being 26. (7+7 = 14  duh)
+  * we only shift right the z stack at the beginning of the function when add_x is negative (div_val == 26)
+  * since add_x is positive for all values where div_val is 1, and the positive add_x values are greater
+    than the legal input digit values that we can provide, (x + add_x) will never be equal to w, so when div_val is 1,
+    we will always be adding something onto the stack, specifically: (w + add_y)
+
+Let Z be equal to the stack of base26 digits that we will be storing in the z register during program execution.
+
+With these facts, we will always be adding 7 values onto Z, and to reach our goal, we will need to pop
+all 7 of these values off of Z for the z register to be 0 at the end of the program execution.
+
+How do we make sure that we pop from Z 7 times and reach our goal? We need to ensure that we are not pushing
+a value onto the stack for the iterations where we popped from Z. In other words, for those iterations where
+div_val == 26, we need to make sure that we are not pushing values onto the stack.  The only way to ensure this,
+is to make sure that (x +add_x) == w, where x == the top of Z at the beginning of the function call. Recall that on
+the iterations where we pop from Z at the start of the function, add_x will be negative in this iteration. This means
+we will have the opportunity to get (Z % 26 + add_x) to == w in this iteration.  If we can find this value, we will
+not push an extra value onto the stack (it would have been w+add_y).
+
+So basically, every time we popped from Z (div_val == 26), the top value of Z stored in x in the pseudocode is also
+(w + add_y) from the iteration where we last pushed (div_val == 1).
+
+let (w0 + add_y0) be the last input value that we pushed, and (w1 +add_x1) be the current iteration's values.
+
+So we are really trying to ensure that (w0 + add_y0) + (add_x1) == w1 so that we do not push.
+
+Since we are trying to find the largest 14-digit number that will be deemed legal by this program, consider that
+we are trying to find values into a 14-digit number array:
+
+[  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ], [  ]
+  0     1     2     3     4     5     6     7     8     9    10    11    12    13
+
+The index into this array, also matches the index into the iteration of the function call and parameter values.
+
+Our check can be rewritten such that:
+    (w0 + add_y0) == (w1 - add_x1)  , where w0 is the input digit at the iteration index where (w0 +add_y0) was pushed
+                                        and w1 is the input digit at the iteration index where we popped
+
+Since, the left most digits of this array will be the most important when trying to find the highest solution value,
+we want to find the maximum w0 of our legal input values (1-9) and a w1 that will also be legal (1-9) that will satisfy
+the equation. And once we have found w0 and w1, we can set input digits into the array.
+
+The solution solver in pseudocode will look like this:
+
+-------------------------------------------------------------------------------------------------------------
+
+init_arrays_from_input()  # Read from the program input 3 arrays for add_x, div_val and add_y
+
+s = stack.new()
+
+let solution = new int[14]
+
+for i = 0 to 13
+    if div_val[i] == 1
+        s.push( [ i, add_y[i] ] )
+    else if div_val[i] == 26
+
+        prev_vals = s.pop()
+
+        let w0, w1 = 0
+        let add_y0 = prev_vals[1]
+        let prev_i = prev_vals[0]
+        let add_x1 = add_x[i]
+
+
+        outer_loop:
+        for j = 9 to 1
+            for k = 9 to 1
+                if j + add_y0 == k - add_x1
+                    w0 = j
+                    w1 = k
+                    break outer_loop
+
+        assert( w0 + w1 != 0 )
+
+        solution[prev_i] = w0
+        solution[i] = w1
+
+
+-------------------------------------------------------------------------------------------------------------

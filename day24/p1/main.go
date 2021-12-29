@@ -1,10 +1,12 @@
 package main
 
 import (
+	"aoc2021/common/datastructure"
 	"aoc2021/common/file"
+	"aoc2021/day24/alu"
 	"errors"
 	"fmt"
-	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -13,13 +15,17 @@ const (
 	numInstructionsPerSet = 18
 )
 
-var (
-	reALUOutput = regexp.MustCompile(`{"w":(-?\d+),"x":(-?\d+),"y":(-?\d+),"z":(-?\d+)}`)
-)
-
 type InstructionSets []*InstructionSet
 type InstructionSet struct {
 	lines []string
+}
+
+func (is *InstructionSet) getTokens(lineNums []int) [][]string {
+	tokens := make([][]string, 0, len(lineNums))
+	for _, lineNum := range lineNums {
+		tokens = append(tokens, strings.Split(is.lines[lineNum], " "))
+	}
+	return tokens
 }
 
 func NewInstructionSet() *InstructionSet {
@@ -42,8 +48,7 @@ func (iss InstructionSets) combine() []string {
 	return instructions
 }
 
-func getDigits(num int64) ([]int64, error) {
-	bytes := fmt.Sprintf("%d", num)
+func getDigits(bytes string) ([]int64, error) {
 	if strings.Contains(bytes, "0") {
 		return nil, errors.New("has zeros")
 	}
@@ -54,27 +59,127 @@ func getDigits(num int64) ([]int64, error) {
 	return vals, nil
 }
 
+type stackVals struct {
+	index int
+	addY  int
+}
+
 func main() {
-	/*
-		iss := getInstructionSets("../data.txt")
 
-		num := int64(79996462532205)
+	iss := getInstructionSets("../data.txt")
 
-		for num > 0 {
-			if digits, err := getDigits(num); err == nil {
-				output, err := alu.RunALU(iss.combine(), digits)
-				if err != nil {
-					panic(err)
-				}
-				matches := reALUOutput.FindAllStringSubmatch(output,-1)
-				if matches[0][4] == "0" {
-					fmt.Println(digits)
-					break
+	addX := make([]int, numInputSets, numInputSets)
+	divVal := make([]int, numInputSets, numInputSets)
+	addY := make([]int, numInputSets, numInputSets)
+
+	for i := range iss {
+		for j, tokens := range iss[i].getTokens([]int{4, 5, 15}) {
+			val, _ := strconv.ParseInt(tokens[2], 10, 32)
+			switch j {
+			case 0:
+				divVal[i] = int(val)
+			case 1:
+				addX[i] = int(val)
+			case 2:
+				addY[i] = int(val)
+			}
+		}
+	}
+
+	s := datastructure.NewStack(14)
+	largestSolutionStr := make([]byte, numInputSets, numInputSets)
+	largestSolutionInts := make([]int64, numInputSets, numInputSets)
+
+	smallestSolutionStr := make([]byte, numInputSets, numInputSets)
+	smallestSolutionInts := make([]int64, numInputSets, numInputSets)
+
+	for i, addY := range addY {
+		if divVal[i] == 1 {
+			s.Push(stackVals{index: i, addY: addY})
+		} else if divVal[i] == 26 {
+
+			prevVals := s.Pop().(stackVals)
+
+			var w0Largest, w1Largest, w0Smallest, w1Smallest int
+
+			addY0 := prevVals.addY
+			prevIndex := prevVals.index
+
+			addX1 := addX[i]
+
+		outer1:
+			for j := 9; j > 0; j-- {
+				for k := 9; k > 0; k-- {
+					if j+addY0 == k-addX1 {
+						w0Largest = j
+						w1Largest = k
+						break outer1
+					}
 				}
 			}
-			num--
+
+			if w0Largest+w1Largest == 0 {
+				panic("not supposed to happen, can't find a solution")
+			}
+
+			largestSolutionStr[prevIndex] = byte(w0Largest) + '0'
+			largestSolutionStr[i] = byte(w1Largest) + '0'
+
+			largestSolutionInts[prevIndex] = int64(w0Largest)
+			largestSolutionInts[i] = int64(w1Largest)
+
+		outer2:
+			for j := 1; j <= 9; j++ {
+				for k := 1; k <= 9; k++ {
+					if j+addY0 == k-addX1 {
+						w0Smallest = j
+						w1Smallest = k
+						break outer2
+					}
+				}
+			}
+
+			if w0Smallest+w1Smallest == 0 {
+				panic("not supposed to happen, can't find a solution")
+			}
+
+			smallestSolutionStr[prevIndex] = byte(w0Smallest) + '0'
+			smallestSolutionStr[i] = byte(w1Smallest) + '0'
+
+			smallestSolutionInts[prevIndex] = int64(w0Smallest)
+			smallestSolutionInts[i] = int64(w1Smallest)
+
+		} else {
+			panic("shouldn't happen")
 		}
-	*/
+	}
+
+	_, _, _, z, output, err := alu.RunALU(iss.combine(), largestSolutionInts)
+
+	if z == 0 && err == nil {
+		fmt.Println("found largest solution: ", string(largestSolutionStr))
+	} else {
+		if err != nil {
+			fmt.Println("error checking largest solution: ", err)
+		} else {
+			fmt.Println("largest solution does not check out")
+			fmt.Println("final ALU state: ", output)
+		}
+	}
+
+	_, _, _, z, output, err = alu.RunALU(iss.combine(), smallestSolutionInts)
+
+	if z == 0 && err == nil {
+		fmt.Println("found smallest solution: ", string(smallestSolutionStr))
+	} else {
+		if err != nil {
+			fmt.Println("error checking smallest solution: ", err)
+		} else {
+			fmt.Println("smallest solution does not check out")
+			fmt.Println("final ALU state: ", output)
+		}
+	}
+
 }
 
 func getInstructionSets(filename string) InstructionSets {

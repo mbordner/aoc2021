@@ -54,6 +54,16 @@ func TestALU_Process(t *testing.T) {
 			inputs:   []int64{15},
 			expected: `{"w":1,"x":1,"y":1,"z":1}`,
 		},
+		{
+			program:  []string{`inp z`, `inp y`, `div z y`},
+			inputs:   []int64{4, 3},
+			expected: `{"w":0,"x":0,"y":3,"z":1}`,
+		},
+		{
+			program:  []string{`inp z`, `inp y`, `div z y`},
+			inputs:   []int64{3, 4},
+			expected: `{"w":0,"x":0,"y":4,"z":0}`,
+		},
 	}
 
 	for i, tc := range cases {

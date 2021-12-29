@@ -211,8 +211,6 @@ func aluRun(runProgram []string, runInputs []int64, initialState string) (int64,
 		close(numInput)
 	}
 
-	defer cleanup()
-
 	go func() {
 		opened := true
 		for opened {
@@ -232,6 +230,8 @@ func aluRun(runProgram []string, runInputs []int64, initialState string) (int64,
 			}
 		}
 	}
+
+	cleanup()
 
 	return alu.W, alu.X, alu.Y, alu.Z, alu.String(), nil
 }
